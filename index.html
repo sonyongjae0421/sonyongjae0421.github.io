@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: white;
+      transition: background-image 0.5s ease-in-out;
+    }
+    .overlay {
+      min-height: 100vh;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
+    #weather {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    #clock {
+      font-size: 5rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    .hidden {
+      display: none !important;
+    }
+    form {
+      margin-bottom: 30px;
+    }
+    input {
+      padding: 10px 15px;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+      text-align: center;
+    }
+    #login-form input {
+      background: rgba(255, 255, 255, 0.8);
+    }
+    #todo-form input {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid white;
+    }
+    #todo-form input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    #greeting {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    #todo-list {
+      list-style: none;
+      max-height: 200px;
+      overflow-y: auto;
+      width: 100%;
+      max-width: 350px;
+    }
+    #todo-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 10px 15px;
+      border-radius: 5px;
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+    }
+    #todo-list button {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <div id="weather">
+      <span></span>
+      <span></span>
+    </div>
+
+    <h1 id="clock">00:00:00</h1>
+
+    <form id="login-form" class="hidden">
+      <input required maxlength="15" type="text" placeholder="What is your name?" />
+    </form>
+
+    <h2 id="greeting" class="hidden"></h2>
+
+    <form id="todo-form" class="hidden">
+      <input required type="text" placeholder="Write a To Do and Press Enter" />
+    </form>
+
+    <ul id="todo-list"></ul>
+  </div>
+
+  <script>
+    const clock = document.querySelector("#clock");
+    const loginForm = document.querySelector("#login-form");
+    const loginInput = document.querySelector("#login-form input");
+    const greeting = document.querySelector("#greeting");
+    const toDoForm = document.querySelector("#todo-form");
+    const toDoInput = document.querySelector("#todo-form input");
+    const toDoList = document.querySelector("#todo-list");
+    const weather = document.querySelector("#weather span:first-child");
+    const city = document.querySelector("#weather span:last-child");
+
+    const USERNAME_KEY = "username";
+    const TODOS_KEY = "todos";
+    const API_KEY = "8e22449657ddaa114ecbb2bda90b64cf";
+
+    function getClock() {
+      const date = new Date();
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      const seconds = String(date.getSeconds()).padStart(2, "0");
+      clock.innerText = `${hours}:${minutes}:${seconds}`;
+    }
+
+    function onLoginSubmit(event) {
+      event.preventDefault();
+      loginForm.classList.add("hidden");
+      const username = loginInput.value;
+      localStorage.setItem(USERNAME_KEY, username);
+      paintGreetings(username);
+    }
+
+    function paintGreetings(username) {
+      greeting.innerText = `Hello, ${username}!`;
+      greeting.classList.remove("hidden");
+      toDoForm.classList.remove("hidden");
+    }
+
+    let toDos = [];
+
+    function saveToDos() {
+      localStorage.setItem(TODOS_KEY, JSON.stringify(toDos));
+    }
+
+    function deleteToDo(event) {
+      const li = event.target.parentElement;
+      li.remove();
+      toDos = toDos.filter((toDo) => toDo.id !== parseInt(li.id));
+      saveToDos();
+    }
+
+    function paintToDo(newTodo) {
+      const li = document.createElement("li");
+      li.id = newTodo.id;
+      const span = document.createElement("span");
+      span.innerText = newTodo.text;
+      const button = document.createElement("button");
+      button.innerText = "❌";
+      button.addEventListener("click", deleteToDo);
+      li.appendChild(span);
+      li.appendChild(button);
+      toDoList.appendChild(li);
+    }
+
+    function handleToDoSubmit(event) {
+      event.preventDefault();
+      const newTodo = toDoInput.value;
+      toDoInput.value = "";
+      const newTodoObj = {
+        text: newTodo,
+        id: Date.now(),
+      };
+      toDos.push(newTodoObj);
+      paintToDo(newTodoObj);
+      saveToDos();
+    }
+
+    function bgInit() {
+      const images = [
+        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200",
+        "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1200",
+        "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=1200",
+        "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1200"
+      ];
+      const chosenImage = images[Math.floor(Math.random() * images.length)];
+      document.body.style.backgroundImage = `url('${chosenImage}')`;
+    }
+
+    function onGeoOk(position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+      fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          city.innerText = `@ ${data.name}`;
+          weather.innerText = `${data.weather[0].main} / ${Math.round(data.main.temp)}°C`;
+        });
+    }
+
+    function onGeoError() {
+      weather.innerText = "Weather info unavailable";
+    }
+
+    getClock();
+    setInterval(getClock, 1000);
+    bgInit();
+
+    loginForm.addEventListener("submit", onLoginSubmit);
+    toDoForm.addEventListener("submit", handleToDoSubmit);
+
+    const savedUsername = localStorage.getItem(USERNAME_KEY);
+
+    if (savedUsername === null) {
+      loginForm.classList.remove("hidden");
+    } else {
+      paintGreetings(savedUsername);
+    }
+
+    const savedToDos = localStorage.getItem(TODOS_KEY);
+
+    if (savedToDos !== null) {
+      const parsedToDos = JSON.parse(savedToDos);
+      toDos = parsedToDos;
+      parsedToDos.forEach(paintToDo);
+    }
+
+    navigator.geolocation.getCurrentPosition(onGeoOk, onGeoError);
+  </script>
+</body>
+</html>
